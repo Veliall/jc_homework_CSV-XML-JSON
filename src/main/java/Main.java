@@ -5,6 +5,8 @@ import com.opencsv.CSVReader;
 import com.opencsv.bean.ColumnPositionMappingStrategy;
 import com.opencsv.bean.CsvToBean;
 import com.opencsv.bean.CsvToBeanBuilder;
+import org.json.simple.JSONArray;
+import org.json.simple.parser.JSONParser;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -14,10 +16,7 @@ import org.xml.sax.SAXException;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
@@ -26,12 +25,10 @@ public class Main {
 
     public static void main(String[] args) {
 
-
         String[] columnMapping = {"id", "firstName", "lastName", "country", "age"};
         String fileName = "data.csv";
         String json = listToJson(parseCSV(columnMapping, fileName));
         writeString(json, "data.json");
-
 
         List<Employee> list = new ArrayList<>();
         try {
@@ -42,6 +39,40 @@ public class Main {
         String json2 = listToJson(list);
         writeString(json2, "data2.json");
 
+        String jsonFromJson = readString("data.json");
+        List<Employee> listJson = jsonToList(jsonFromJson);
+
+    }
+
+    private static List<Employee> jsonToList(String jsonFromJson) {
+        List<Employee> employeeList = new ArrayList<>();
+        GsonBuilder builder = new GsonBuilder();
+        Gson gson = builder.create();
+        JSONParser parser = new JSONParser();
+        try {
+            JSONArray array = (JSONArray) parser.parse(jsonFromJson);
+            for (Object object : array) {
+                Employee employee = gson.fromJson(String.valueOf(object), Employee.class);
+                employeeList.add(employee);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return employeeList;
+
+    }
+
+    private static String readString(String path) {
+        StringBuilder result = new StringBuilder();
+        try (BufferedReader reader = new BufferedReader(new FileReader(path))) {
+            String s;
+            while ((s = reader.readLine()) != null) {
+                result.append(s);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return result.toString();
     }
 
     private static List<Employee> parseXML(String s) throws ParserConfigurationException, IOException, SAXException {
